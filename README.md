@@ -10,7 +10,8 @@ http://<host>:<port>/neuroglancer/index.html#!{'layers':{'a':{'type':'image'_'so
 
 Data from a \<path\> ending in /mojo will be correctly read using the mojo filesystem.
 The \<w\>,\<h\>,\<d\> tells butterfly the size for the highest resolution \<m\> scale of 0.
-The \<m\> tells butterfly how many times the image size is halved in \<w\> and \<h\>.
+The \<m\> tells butterfly how many scales are given by halving in \<w\> and \<h\>.
+(\<m\> > 0 )
 
 NOTE: \<w\>,\<h\>,\<d\>, \& \<m\> are not free to change. They must match the data in \<path\>.
 
