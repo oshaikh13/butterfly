@@ -1,5 +1,19 @@
 # butterfly
 
+
+## Neuroglancer viewer
+
+You can access the viewer with a url of the following form: 
+```
+http://<host>:<port>/neuroglancer/index.html#!{'layers':{'a':{'type':'image'_'source':'python://http://<host>:<port>/data/?mip=<m>&width=<w>&height=<h>&depth=<d>&datapath=<path>'}}}
+```
+
+Data from a \<path\> ending in /mojo will be correctly read using the mojo filesystem.
+The \<w\>,\<h\>,\<d\> tells butterfly the size for the highest resolution \<m\> scale of 0.
+The \<m\> tells butterfly how many times the image size is halved in \<w\> and \<h\>.
+
+NOTE: \<w\>,\<h\>,\<d\>, \& \<m\> are not free to change. They must match the data in \<path\>.
+
 ## Requirements
 - Requires OpenCV 2.4+
 - Python requirements in [requirements.txt](requirements.txt)

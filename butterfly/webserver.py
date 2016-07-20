@@ -158,7 +158,7 @@ class WebServer:
                       "offset": [0,0,0]
                     }
                     self._neuro_contents['threeDimensionalScales'].append(d)
-                # todo for dynamic data set
+
                 content = json.dumps(self._neuro_contents)
                 handler.set_header("Content-type", 'text/html')
 
