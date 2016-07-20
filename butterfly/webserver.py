@@ -1,5 +1,6 @@
 import logging
 import os
+import json
 import pkg_resources
 import socket
 import tornado
@@ -83,6 +84,14 @@ class WebServer:
         self._core = core
         self._port = port
 
+        self._neuro_contents = {
+          "dataType": "uint8",
+          "threeDimensionalScales": [],
+          "volumeType": "image",
+          "numChannels": 1,
+          "encoding": "npz"
+        }
+
     def start(self):
         '''
         '''
@@ -93,7 +102,7 @@ class WebServer:
         webapp = tornado.web.Application([
             (r'/api/(.*)', RestAPIHandler, dict(core=self._core)),
             (r'/neuroglancer/info/(.*)', WebServerHandler, dict(webserver=self)),
-            (r'/neuroglancer/npz/(.*)', WebServerHandler, dict(webserver=self)),            
+            (r'/neuroglancer/npz/(.*)', WebServerHandler, dict(webserver=self)),
             (r'/neuroglancer/(.*)', PkgResourcesHandler2, {}),
             (r'/metainfo/(.*)', WebServerHandler, dict(webserver=self)),
             (r'/data/(.*)', WebServerHandler, dict(webserver=self)),
@@ -132,8 +141,25 @@ class WebServer:
 
             if splitted_request[2] == 'info':
 
+                # default values
+                preset = {'mip': '2','datapath': '/','width':'1024','height':'1024','depth':'75'}
+                # Deal the given settings into the preset object above
+                givens = handler.request.uri.split('?')[1].split('&')
+                preset.update(dict(map(lambda g: g.split('='),givens)))
+                getnum = lambda x : int(preset[x])
+
+                # Create a threeDimensionalScale for all mip layers
+                for i in range(getnum('mip')):
+                    vox = np.array([2**0,2**i,2**i])
+                    d = {
+                      "voxelSize": list(vox),
+                      "sizeInVoxels": list(map(getnum,['depth','width','height'])//vox),
+                      "key": preset['datapath']+'/'+','.join(map(str, vox)),
+                      "offset": [0,0,0]
+                    }
+                    self._neuro_contents['threeDimensionalScales'].append(d)
                 # todo for dynamic data set
-                content = '{"dataType": "uint8", "threeDimensionalScales": [{"voxelSize": [1, 1, 1], "sizeInVoxels": [75, 1024, 1024], "key": "/home/d/data/ac3x75/mojo/1,1,1", "offset": [0, 0, 0]}, {"voxelSize": [2, 2, 2], "sizeInVoxels": [75, 512, 512], "key": "/home/d/data/ac3x75/mojo/2,2,2", "offset": [0, 0, 0]}], "numChannels": 1, "volumeType": "image", "encoding": "npz"}'
+                content = json.dumps(self._neuro_contents)
                 handler.set_header("Content-type", 'text/html')
 
             elif splitted_request[2] == 'npz':

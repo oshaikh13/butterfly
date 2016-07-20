@@ -67,12 +67,7 @@ class RequestParser(object):
 
         elif 'npz' in request:
 
-            # Parse OCP request by the '/' splitted request, ind finds the
-            # position of '/ocp/'
-            #ind = request.index('ocp')
-            #datapath = '/'.join(filter(None, request[1:ind]))
-            ind = 1
-            datapath = '/home/d/data/ac3x75/mojo'
+            datapath = '/'.join(request[1:-4])
 
             # Check for windows systems and undo separator changes in request
             if re.match('[a-zA-Z]:', datapath):
@@ -85,12 +80,12 @@ class RequestParser(object):
 
             try:
                 # Debug output in console for OCP request
-                logger.report_event('Neuroglancer request: ' + str(request[ind:]))
+                logger.report_event('Neuroglancer request: ' + datapath)
                 logger.report_event('Datapath: ' + datapath)
 
                 w = int(float(request[-4].split(',')[0])) -1
-                x_range = [int(i) for i in request[-1].split(',')]
-                y_range = [int(i) for i in request[-2].split(',')]
+                x_range = [int(i) for i in request[-2].split(',')]
+                y_range = [int(i) for i in request[-1].split(',')]
                 z_range = [int(i) for i in request[-3].split(',')]
                 print w, x_range, y_range, z_range
                 start = [x_range[0], y_range[0], z_range[0]]
