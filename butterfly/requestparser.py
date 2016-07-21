@@ -84,9 +84,9 @@ class RequestParser(object):
                 logger.report_event('Datapath: ' + datapath)
 
                 w = int(float(request[-4].split(',')[0])) -1
-                x_range = [int(i) for i in request[-2].split(',')]
-                y_range = [int(i) for i in request[-1].split(',')]
-                z_range = [int(i) for i in request[-3].split(',')]
+                x_range = [int(i) for i in request[-3].split(',')]
+                y_range = [int(i) for i in request[-2].split(',')]
+                z_range = [int(i) for i in request[-1].split(',')]
                 print w, x_range, y_range, z_range
                 start = [x_range[0], y_range[0], z_range[0]]
                 volsize = [

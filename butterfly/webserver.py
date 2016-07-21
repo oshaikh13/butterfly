@@ -150,10 +150,10 @@ class WebServer:
 
                 # Create a threeDimensionalScale for all mip layers
                 for i in range(getnum('mip')):
-                    vox = np.array([2**0,2**i,2**i])
+                    vox = np.array([2**i,2**i,1])
                     d = {
                       "voxelSize": list(vox),
-                      "sizeInVoxels": list(map(getnum,['depth','width','height'])//vox),
+                      "sizeInVoxels": list(map(getnum,['width','height','depth'])//vox),
                       "key": preset['datapath']+'/'+','.join(map(str, vox)),
                       "offset": [0,0,0]
                     }
@@ -221,6 +221,7 @@ class WebServer:
                 elif output_format == 'npz':
 
                     fileobj = io.BytesIO()
+                    volume = volume.transpose(2, 0, 1)
                     if len(volume.shape) == 3:
                         volume = np.expand_dims(volume, 0)
                     np.save(fileobj, volume.astype(np.uint8))
