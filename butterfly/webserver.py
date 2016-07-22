@@ -12,6 +12,7 @@ import cv2
 import io
 import mimetypes
 import posixpath
+import glob
 import StringIO
 import zlib
 import rh_logger
@@ -73,6 +74,24 @@ class PkgResourcesHandler2(tornado.web.RequestHandler):
         data = pkg_resources.resource_string(
             __name__, os.path.join("neuroglancer", path))
         self.write(data)
+
+# All this does right now is get 'z' slices for any dataset.
+def getDatasourceInformation(datapath) :
+    # A. Try mojo
+    sourceInformation = {
+        'depth': -1,
+        'height': -1,
+        'width': -1,
+        'mip': -1
+    }
+
+    if os.path.split(datapath)[-1] == "mojo":
+        # Proceed to do mojo-specific hunting.
+        base_path = os.path.join(datapath, 'images', 'tiles');
+        slice_folders = glob.glob(os.path.join(base_path, 'w=00000000', 'z=*'));
+        sourceInformation['depth'] = len(slice_folders);
+
+    return sourceInformation;
 
 
 
@@ -147,6 +166,16 @@ class WebServer:
                 givens = handler.request.uri.split('?')[1].split('&')
                 preset.update(dict(map(lambda g: g.split('='),givens)))
                 getnum = lambda x : int(preset[x])
+
+                # Get the z slices from the datapath.
+                updatedInfo = getDatasourceInformation(preset['datapath']);
+                
+                for element in updatedInfo: 
+                    if updatedInfo[element] != -1 :
+                        print "Updating " + element;
+                        preset[element] = updatedInfo[element];
+
+
 
                 # Create a threeDimensionalScale for all mip layers
                 for i in range(getnum('mip')):
