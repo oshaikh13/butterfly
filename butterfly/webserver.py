@@ -8,6 +8,7 @@ import tornado.gen
 import tornado.web
 import tornado.websocket
 import numpy as np
+import re
 import cv2
 import io
 import mimetypes
@@ -17,6 +18,7 @@ import StringIO
 import zlib
 import rh_logger
 import settings
+import argparse
 from requestparser import RequestParser
 from urllib2 import HTTPError
 from restapi import RestAPIHandler
@@ -75,7 +77,28 @@ class PkgResourcesHandler2(tornado.web.RequestHandler):
             __name__, os.path.join("neuroglancer", path))
         self.write(data)
 
+
+
 # All this does right now is get 'z' slices for any dataset.
+def convert_arg_line_to_args(arg_line):
+    for arg in re.split(''' (?=(?:[^'"]|'[^']*'|"[^"]*")*$)''', arg_line):
+        if not arg.strip():
+            continue
+        yield arg.strip('\'\"\n')
+
+def parseNumRange(num_arg):
+    match = re.match(r'(\d+)(?:-(\d+))?$', num_arg)
+    if not match:
+        raise argparse.ArgumentTypeError(
+            "'" + num_arg + "' must be a number or range (ex. '5' or '0-10').")
+    start = match.group(1)
+    end = match.group(2) or match.group(1)
+    step = 1
+    if end < start:
+        step = -1
+    return list(range(int(start), int(end) + step, step))
+
+
 def getDatasourceInformation(datapath) :
     # A. Try mojo
     sourceInformation = {
@@ -90,9 +113,20 @@ def getDatasourceInformation(datapath) :
         base_path = os.path.join(datapath, 'images', 'tiles');
         slice_folders = glob.glob(os.path.join(base_path, 'w=00000000', 'z=*'));
         sourceInformation['depth'] = len(slice_folders);
+    else:
+        # Anything not mojo, that has a .args file
+        args_file = os.path.join(datapath, '*.args')
+        args_file = glob.glob(args_file)[0]
+
+        with open(args_file, 'r') as f:
+            args_list = [
+                arg for line in f for arg in convert_arg_line_to_args(line)]
+
+        zRangeData = parseNumRange(args_list[args_list.index('--z_ind') + 1]);
+        sourceInformation['depth'] = zRangeData[-1] + 1; #include slice one left out by parser
+
 
     return sourceInformation;
-
 
 
 class WebServer:
