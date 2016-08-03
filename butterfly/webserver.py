@@ -99,8 +99,39 @@ def parseNumRange(num_arg):
     return list(range(int(start), int(end) + step, step))
 
 
+def firstSliceInfo(method, base_path) :
+    # Assume every "slice" is the same dimension.
+    if method == "mojo": 
+        tmp_file = os.path.join(
+            base_path,
+            'w=00000000',
+            'z=00000000')
+
+        files = os.listdir(tmp_file);
+
+        currentFile = files[-1];
+        delims = currentFile.replace("=", ' ').replace(",", ' ').replace('.', ' ').split(' ');
+        
+        coordinates = {
+            'x' : int(delims[1])+1, 
+            'y' : int(delims[3])+1
+        };
+
+        default_img_path = os.path.join(
+            tmp_file,
+            'y=' + delims[3] + ',x=' + delims[1] + '.*');
+
+        img_ext = os.path.splitext(glob.glob(default_img_path)[0])[1]
+        default_img_path = default_img_path.replace('.*', img_ext);
+
+        img = cv2.imread(default_img_path);
+
+        coordinates['x'] = coordinates['x'] * img.shape[0];
+        coordinates['y'] = coordinates['y'] * img.shape[1];
+
+        return coordinates;
+
 def getDatasourceInformation(datapath) :
-    # A. Try mojo
     sourceInformation = {
         'depth': -1,
         'height': -1,
@@ -108,11 +139,16 @@ def getDatasourceInformation(datapath) :
         'mip': -1
     }
 
+    # A. Try mojo
     if os.path.split(datapath)[-1] == "mojo":
         # Proceed to do mojo-specific hunting.
         base_path = os.path.join(datapath, 'images', 'tiles');
         slice_folders = glob.glob(os.path.join(base_path, 'w=00000000', 'z=*'));
         sourceInformation['depth'] = len(slice_folders);
+        size = firstSliceInfo("mojo", base_path);
+        sourceInformation['width'] = size['x'];
+        sourceInformation['height'] = size['y'];
+    # B. Try reading .args files
     else:
         # Anything not mojo, that has a .args file
         args_file = os.path.join(datapath, '*.args')
