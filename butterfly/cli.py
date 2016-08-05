@@ -10,6 +10,8 @@ from butterfly import core
 from butterfly import settings
 from butterfly import webserver
 
+from imagemeta import ImageMetaHandler
+
 
 def main():
     '''
@@ -34,30 +36,6 @@ def main():
     ws = webserver.WebServer(c, port)
     ws.start()
 
-
-# Custom parsing of the args file
-
-
-def convert_arg_line_to_args(arg_line):
-    for arg in re.split(''' (?=(?:[^'"]|'[^']*'|"[^"]*")*$)''', arg_line):
-        if not arg.strip():
-            continue
-        yield arg.strip('\'\"')
-
-
-def parseNumRange(num_arg):
-    match = re.match(r'(\d+)(?:-(\d+))?$', num_arg)
-    if not match:
-        raise argparse.ArgumentTypeError(
-            "'" + num_arg + "' must be a number or range (ex. '5' or '0-10').")
-    start = match.group(1)
-    end = match.group(2) or match.group(1)
-    step = 1
-    if end < start:
-        step = -1
-    return list(range(int(start), int(end) + step, step))
-
-
 def query():
     logger.start_process("bquery", "Starting butterfly query")
     c = core.Core()
@@ -68,7 +46,7 @@ def query():
         description='Returns cutout of requested volume from a given EM stack',
         fromfile_prefix_chars='@',
         add_help=False)
-    parser.convert_arg_line_to_args = convert_arg_line_to_args
+    parser.convert_arg_line_to_args = ImageMetaHandler.convert_arg_line_to_args;
 
     # Argument group for input/output paths
     paths = parser.add_argument_group('Paths')
@@ -121,19 +99,19 @@ def query():
     d_inf.add_argument(
         '--x_ind',
         nargs='+',
-        type=parseNumRange,
+        type=ImageMetaHandler.parseNumRange,
         help=argparse.SUPPRESS,
         required=True)  # Row indices of the filenames
     d_inf.add_argument(
         '--y_ind',
         nargs='+',
-        type=parseNumRange,
+        type=ImageMetaHandler.parseNumRange,
         help=argparse.SUPPRESS,
         required=True)  # Column indices of the filenames
     d_inf.add_argument(
         '--z_ind',
         nargs='+',
-        type=parseNumRange,
+        type=ImageMetaHandler.parseNumRange,
         help=argparse.SUPPRESS,
         required=True)  # Slice indices of the filenames
     d_inf.add_argument(

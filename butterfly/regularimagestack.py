@@ -4,26 +4,7 @@ import os
 import re
 import glob
 
-
-def convert_arg_line_to_args(arg_line):
-    for arg in re.split(''' (?=(?:[^'"]|'[^']*'|"[^"]*")*$)''', arg_line):
-        if not arg.strip():
-            continue
-        yield arg.strip('\'\"\n')
-
-
-def parseNumRange(num_arg):
-    match = re.match(r'(\d+)(?:-(\d+))?$', num_arg)
-    if not match:
-        raise argparse.ArgumentTypeError(
-            "'" + num_arg + "' must be a number or range (ex. '5' or '0-10').")
-    start = match.group(1)
-    end = match.group(2) or match.group(1)
-    step = 1
-    if end < start:
-        step = -1
-    return list(range(int(start), int(end) + step, step))
-
+from imagemeta import ImageMetaHandler
 
 class RegularImageStack(DataSource):
 
@@ -46,7 +27,7 @@ class RegularImageStack(DataSource):
 
         with open(args_file, 'r') as f:
             args_list = [
-                arg for line in f for arg in convert_arg_line_to_args(line)]
+                arg for line in f for arg in ImageMetaHandler.convert_arg_line_to_args(line)]
 
         args = d_inf.parse_args(args_list)
         filename = args.filename
