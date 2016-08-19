@@ -48,39 +48,32 @@ class WebServerHandler(tornado.web.RequestHandler):
 # Had vague idea that resources should be served via pkg_handler and
 # Luigi did it, so I am cribbing from their implementation.
 #
-class PkgResourcesHandler(tornado.web.RequestHandler):
+
+def serveAllFiles(res, path, folder) :
+    if path == "/":
+        res.redirect("index.html?"+res.request.query)
+    path = posixpath.normpath(path)
+    if os.path.isabs(path) or path.startswith(".."):
+        return res.send_error(404)
+
+    extension = os.path.splitext(path)[1]
+    if extension in mimetypes.types_map:
+        res.set_header("Content-Type", mimetypes.types_map[extension])
+    data = pkg_resources.resource_string(
+        __name__, os.path.join(folder, path))
+    res.write(data)  
+
+
+class NeuroglancerResouceHandler(tornado.web.RequestHandler):
 
     def get(self, path):
-        if path == "/":
-            self.redirect("index.html?"+self.request.query)
-        path = posixpath.normpath(path)
-        if os.path.isabs(path) or path.startswith(".."):
-            return self.send_error(404)
+        serveAllFiles(self, path, "neuroglancer")
 
-        extension = os.path.splitext(path)[1]
-        if extension in mimetypes.types_map:
-            self.set_header("Content-Type", mimetypes.types_map[extension])
-        data = pkg_resources.resource_string(
-            __name__, os.path.join("static", path))
-        self.write(data)
-
-class PkgResourcesHandler2(tornado.web.RequestHandler):
+class StaticResouceHandler(tornado.web.RequestHandler):
 
     def get(self, path):
-        if path == "/":
-            self.redirect("index.html?"+self.request.query)
-        path = posixpath.normpath(path)
-        if os.path.isabs(path) or path.startswith(".."):
-            return self.send_error(404)
 
-        extension = os.path.splitext(path)[1]
-        if extension in mimetypes.types_map:
-            self.set_header("Content-Type", mimetypes.types_map[extension])
-        data = pkg_resources.resource_string(
-            __name__, os.path.join("neuroglancer", path))
-        self.write(data)
-
-
+        serveAllFiles(self, path, "static")
 
 
 
@@ -111,14 +104,14 @@ class WebServer:
             (r'/api/(.*)', RestAPIHandler, dict(core=self._core)),
             (r'/neuroglancer/info/(.*)', WebServerHandler, dict(webserver=self)),
             (r'/neuroglancer/npz/(.*)', WebServerHandler, dict(webserver=self)),
-            (r'/neuroglancer/(.*)', PkgResourcesHandler2, {}),
+            (r'/neuroglancer/(.*)', NeuroglancerResouceHandler, {}),
             (r'/metainfo/(.*)', WebServerHandler, dict(webserver=self)),
             (r'/data/(.*)', WebServerHandler, dict(webserver=self)),
             (r'/stop/(.*)', WebServerHandler, dict(webserver=self)),
-            (r'/(index\.html)', PkgResourcesHandler, {}),
-            (r'/(.*\.js)', PkgResourcesHandler, {}),
-            (r'/(images/.*\.png)', PkgResourcesHandler, {}),
-            (r'(/)', PkgResourcesHandler, {})
+            (r'/(index\.html)', StaticResouceHandler, {}),
+            (r'/(.*\.js)', StaticResouceHandler, {}),
+            (r'/(images/.*\.png)', StaticResouceHandler, {}),
+            (r'(/)', StaticResouceHandler, {})
 
         ])
 
@@ -138,6 +131,8 @@ class WebServer:
         splitted_request = handler.request.uri.split('/')
 
         data_request = False
+
+        print splitted_request
 
         if splitted_request[1] == 'metainfo':
 
@@ -315,3 +310,5 @@ class WebServer:
 
         # Temporary check for img output
         handler.write(content)
+
+        print "Sending content";
