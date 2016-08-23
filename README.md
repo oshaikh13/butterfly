@@ -1,5 +1,7 @@
 # butterfly
 
+TODO: [] - Add segmentation support in butterfly. Should work fine this time without random interpolation 
+
 
 ## Neuroglancer viewer
 
